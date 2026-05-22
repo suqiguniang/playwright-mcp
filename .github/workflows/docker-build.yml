@@ -3,13 +3,11 @@ name: Build and Push Docker Image
 on:
   push:
     branches: [ "master" ]
-    # 当推送 tag 时也触发，例如 v1.0.0
     tags: [ "v*.*.*" ]
   pull_request:
     branches: [ "master" ]
 
 env:
-  # 镜像名称，使用 GitHub Container Registry (ghcr.io)
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
@@ -37,7 +35,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 提取 Docker 元数据（标签、版本）
+      - name: 提取 Docker 元数据
         id: meta
         uses: docker/metadata-action@v5
         with:
@@ -52,8 +50,8 @@ jobs:
       - name: 构建并推送 Docker 镜像
         uses: docker/build-push-action@v5
         with:
-          context: .
-          file: ./Dockerfile
+          context: .                # 上下文是仓库根目录，这样 build/Dockerfile 可以访问 data/ 等
+          file: ./build/Dockerfile  # 指定 Dockerfile 的真实路径
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
