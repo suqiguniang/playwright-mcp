@@ -50,8 +50,8 @@ jobs:
       - name: 构建并推送 Docker 镜像
         uses: docker/build-push-action@v5
         with:
-          context: .                # 上下文是仓库根目录，这样 build/Dockerfile 可以访问 data/ 等
-          file: ./build/Dockerfile  # 指定 Dockerfile 的真实路径
+          context: ./build
+          file: Dockerfile
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
