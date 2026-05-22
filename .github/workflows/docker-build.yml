@@ -22,7 +22,7 @@ jobs:
       - name: 检出代码
         uses: actions/checkout@v4
 
-      - name: 设置 QEMU（用于多平台构建）
+      - name: 设置 QEMU（多平台模拟）
         uses: docker/setup-qemu-action@v3
 
       - name: 设置 Docker Buildx
@@ -50,8 +50,8 @@ jobs:
       - name: 构建并推送 Docker 镜像
         uses: docker/build-push-action@v5
         with:
-          context: ./build
-          file: Dockerfile
+          context: ./build              # 构建上下文为 build/ 目录
+          file: ./build/Dockerfile      # Dockerfile 在仓库根目录下的 build/ 中
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
