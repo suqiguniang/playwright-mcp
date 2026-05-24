@@ -70,7 +70,23 @@ sed -i "s/'resize', 'off'/'resize', 'remote'/g" /usr/share/novnc/app/ui.js 2>/de
 
 # Start Chrome with CDP enabled (persistent browser)
 mkdir -p /data/chrome-profile
+# 启动 Chrome 前，清理可能残留的锁文件
+echo "Cleaning up stale Chrome lock files..."
+rm -f /data/chrome-profile/SingletonLock
+rm -f /data/chrome-profile/SingletonSocket
+rm -f /data/chrome-profile/SingletonCookie
 
+# 然后启动 Chrome
+google-chrome \
+  --no-sandbox \
+  --disable-gpu \
+  --disable-dev-shm-usage \
+  --remote-debugging-port=9222 \
+  --user-data-dir=/data/chrome-profile \
+  --no-first-run \
+  --start-maximized \
+  $EXTENSION_ARGS \
+  "about:blank" &
 # Build extension loading args
 EXTENSION_ARGS=""
 if [ -d "/data/extensions/switchyomega" ]; then
