@@ -25,8 +25,8 @@ jobs:
         uses: actions/checkout@v4
 
       # 2. 设置 QEMU (用于多平台构建，可选)
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+      #- name: Set up QEMU
+      #  uses: docker/setup-qemu-action@v3
 
       # 3. 设置 Docker Buildx
       - name: Set up Docker Buildx
@@ -48,6 +48,8 @@ jobs:
           context: ./build          # 指向 build 目录
           file: ./build/Dockerfile  # 明确指定 Dockerfile 路径
           push: true                # 推送到仓库
+          load: true                # 同时加载到本地 Docker，以便下一步导出
+          platforms: linux/amd64    # 单平台，确保 load 可用
           # 设置标签，例如: ghcr.io/<你的用户名>/playwright-mcp:latest
           tags: |
             ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:latest
@@ -55,3 +57,16 @@ jobs:
           # 可选：添加构建参数
           # build-args: |
           #   SOME_ARG=value
+      # 6. 导出镜像为 tar 文件
+      - name: Export Docker image to tar
+        run: |
+          docker save -o /tmp/playwright-mcp.tar \
+            ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:latest
+
+      # 7. 上传 tar 包作为工作流产物，可在 Actions 页面下载
+      - name: Upload image tar as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-mcp-image
+          path: /tmp/playwright-mcp.tar
+          retention-days: 3   # 产物保留天数，可根据需要调整
