@@ -2,59 +2,56 @@ name: Build and Push Docker Image
 
 on:
   push:
-    branches: [ "master" ]
-    tags: [ "v*.*.*" ]
-  pull_request:
-    branches: [ "master" ]
+    branches: [ "master" ]  # 当 master 分支有推送时触发
+    # 你也可以添加 tag 触发，例如：
+    # tags:
+    #   - 'v*' 
+  workflow_dispatch: # 允许手动触发构建
 
 env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  # 请根据你的需求修改镜像名称
+  IMAGE_NAME: playwright-mcp 
 
 jobs:
-  build:
+  build-and-push:
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
 
     steps:
-      - name: 检出代码
+      # 1. 检出代码
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: 设置 QEMU（多平台模拟）
+      # 2. 设置 QEMU (用于多平台构建，可选)
+      - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
-      - name: 设置 Docker Buildx
+      # 3. 设置 Docker Buildx
+      - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: 登录到 GitHub Container Registry
+      # 4. 登录到容器仓库 (以 GitHub Container Registry 为例)
+      - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          # 需要使用 Personal Access Token (PAT) 或 secrets.GITHUB_TOKEN
+          password: ${{ secrets.GITHUB_TOKEN }} 
 
-      - name: 提取 Docker 元数据
-        id: meta
-        uses: docker/metadata-action@v5
+      # 5. 构建并推送 Docker 镜像
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          context: ./build          # 指向 build 目录
+          file: ./build/Dockerfile  # 明确指定 Dockerfile 路径
+          push: true                # 推送到仓库
+          # 设置标签，例如: ghcr.io/<你的用户名>/playwright-mcp:latest
           tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=sha
-
-      - name: 构建并推送 Docker 镜像
-        uses: docker/build-push-action@v5
-        with:
-          context: ./build              # 构建上下文为 build/ 目录
-          file: ./build/Dockerfile      # Dockerfile 在仓库根目录下的 build/ 中
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          platforms: linux/amd64,linux/arm64
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+            ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:latest
+            ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          # 可选：添加构建参数
+          # build-args: |
+          #   SOME_ARG=value
