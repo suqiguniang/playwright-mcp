@@ -33,9 +33,13 @@ export DISPLAY=:99
 vncconfig -display :99 -nowin &
 sleep 1
 
-# Sync X11 PRIMARY and CLIPBOARD selections
-autocutsel -fork
-autocutsel -selection PRIMARY -fork
+# Sync X11 PRIMARY and CLIPBOARD selections (background to avoid blocking)
+(
+  # Wait a bit for X server to be fully ready, then start autocutsel
+  sleep 2
+  autocutsel -fork
+  autocutsel -selection PRIMARY -fork
+) &
 
 # Start dbus (required for fcitx)
 eval $(dbus-launch --sh-syntax)
